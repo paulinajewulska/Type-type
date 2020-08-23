@@ -36,7 +36,8 @@ footer, header, hgroup, menu, nav, section {
 }
 
 body {
-	line-height: 1;
+    line-height: 1;
+    font-family: 'Heebo', Arial, Verdana, Geneva, Tahoma, sans-serif;
 }
 
 ol, ul {
