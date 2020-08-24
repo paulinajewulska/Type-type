@@ -4,22 +4,27 @@ import { string, object } from 'yup';
 import { Button } from '../components/Button';
 import { Input } from '../styles/Form.styles';
 import { Paragraph } from '../styles/Typography.styles';
-import { history } from '../helpers/history';
 
 const connectionString = process.env.REACT_APP_SERVER_CONNECTION;
 
 interface FormValues {
+    username: string;
     email: string;
     password: string;
 }
 
-const LoginForm: FC = (): ReactElement => {
-    const initialValues: FormValues = { email: '', password: '' };
-    let doesntExistsError: boolean = false;
+const RegisterForm: FC = (): ReactElement => {
+    const initialValues: FormValues = { username: '', email: '', password: '' };
+    let userExistsError: boolean = false;
+    let successfulRegistration: boolean = false;
+
     return (
         <Formik
             initialValues={initialValues}
             validationSchema={object({
+                username: string()
+                    .min(4, 'Must be 4 characters or more')
+                    .required('Required'),
                 email: string()
                     .email('Invalid email address')
                     .required('Required'),
@@ -28,7 +33,7 @@ const LoginForm: FC = (): ReactElement => {
                     .required('Required'),
             })}
             onSubmit={async (values) => {
-                const response: (Response | void) = await fetch(`${connectionString}/login`, {
+                const response: (Response | void) = await fetch(`${connectionString}/register`, {
                     method: "POST",
                     body: JSON.stringify(values),
                     headers: {
@@ -37,33 +42,32 @@ const LoginForm: FC = (): ReactElement => {
                 }).catch(error => console.error("Error:", error));
 
                 if (response && response.status === 200) {
-                    const token: (string | null) = response.headers.get('auth-token');
-                    if (token !== null) {
-                        sessionStorage.setItem('token', token);
-                        history.push("/");
-                        window.location.reload();
-                        doesntExistsError = false;
-                    } else {
-                        doesntExistsError = true;
-                    }
-                } else {
-                    doesntExistsError = true;
+                    successfulRegistration = true;
+                    userExistsError = false;
+                }
+                if (response && response.status === 400) {
+                    successfulRegistration = false;
+                    userExistsError = true;
                 }
             }}
         >
             {props => (
                 <Form>
+                    <label htmlFor="username">Username</label>
+                    <Input name="username" type="text" onChange={props.handleChange} />
+                    <ErrorMessage name="username" />
                     <label htmlFor="email">Email</label>
                     <Input name="email" type="email" onChange={props.handleChange} />
                     <ErrorMessage name="email" />
                     <label htmlFor="password">Password</label>
                     <Input name="password" type="password" onChange={props.handleChange} />
                     <ErrorMessage name="password" />
-                    {doesntExistsError && <Paragraph>User does not exists :(</Paragraph>}
-                    <Button text="Sign in"></Button>
+                    {successfulRegistration && <Paragraph>User properly registered.</Paragraph>}
+                    {userExistsError && <Paragraph>User already exists :(</Paragraph>}
+                    <Button text="Sign up"></Button>
                 </Form>)}
         </Formik>
     );
 };
 
-export { LoginForm };
+export { RegisterForm };
